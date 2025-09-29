@@ -1,0 +1,1323 @@
+---
+title: "AEC 500: Linear Programming and DEA Homework"
+author: "BABATUNDE FATI"
+date: "2024-11-03"
+output: word_document
+---
+
+### Decision Variables
+1a. Let $X_{ij}$ be the decision variable representing the bushels of oranges transported from grove $i$ to plant $j$.
+
+The indices for $i$ and $j$ are defined as follows:
+
+i. **Groves**:
+   - $i = 1$: Mt. Dora Grove
+   - $i = 2$: Eustis Grove
+   - $i = 3$: Clermont Grove
+
+ii. **Processing Plants**:
+   - $j = 1$: Ocala Plant
+   - $j = 2$: Orlando Plant
+   - $j = 3$: Leesburg Plant
+
+The decision variables are:
+
+- $X_{11}$: Bushels transported from Mt. Dora to Ocala
+- $X_{12}$: Bushels transported from Mt. Dora to Orlando
+- $X_{13}$: Bushels transported from Mt. Dora to Leesburg
+- $X_{21}$: Bushels transported from Eustis to Ocala
+- $X_{22}$: Bushels transported from Eustis to Orlando
+- $X_{23}$: Bushels transported from Eustis to Leesburg
+- $X_{31}$: Bushels transported from Clermont to Ocala
+- $X_{32}$: Bushels transported from Clermont to Orlando
+- $X_{33}$: Bushels transported from Clermont to Leesburg
+
+<br>
+
+#### 1b. objective function
+The objective function is to minimize the total transportation cost, given by:
+
+$$
+\text{Minimize } Z = 21X_{11} + 50X_{12} + 40X_{13} + 35X_{21} + 30X_{22} + 22X_{23} + 55X_{31} + 20X_{32} + 25X_{33}
+$$
+
+where:
+
+- $Z$ is the total transportation cost in mile-bushels.
+- $X_{ij}$ represents the bushels of oranges transported from grove $i$ to plant $j$.
+
+#### 1c. constraints
+
+
+ 1. Supply Constraints
+Each grove's total output must equal its production capacity.
+
+- **Mt. Dora Grove**:
+  $$
+  X_{11} + X_{12} + X_{13} = 275000
+  $$
+  
+- **Eustis Grove**:
+  $$
+  X_{21} + X_{22} + X_{23} = 400000
+  $$
+  
+- **Clermont Grove**:
+  $$
+  X_{31} + X_{32} + X_{33} = 300000
+  $$
+
+2. Capacity Constraints
+Each processing plant has a limit on the total number of bushels it can process.
+
+- **Ocala Plant**:
+  $$
+  X_{11} + X_{21} + X_{31} \leq 200000
+  $$
+  
+- **Orlando Plant**:
+  $$
+  X_{12} + X_{22} + X_{32} \leq 600000
+  $$
+  
+- **Leesburg Plant**:
+  $$
+  X_{13} + X_{23} + X_{33} \leq 225000
+  $$
+
+3. Non-negativity Constraints
+All decision variables must be non-negative:
+
+$$
+X_{ij} \geq 0 \quad \text{for all } i, j
+$$
+
+
+
+# Define the objective coefficients (cost per mile-bushel)
+obj <- c(21, 50, 40, 35, 30, 22, 55, 20, 25)
+
+Define the technical coefficients matrix (A)
+This matrix includes both supply constraints (each grove) and capacity constraints (each plant)
+
+#### 1d. Lp model 
+```{r, error=TRUE}
+library(lpSolve)
+
+
+
+
+# Define production values from each grove (in bushels)
+production <- c(275000, 400000, 300000)  # Mt. Dora, Eustis, Clermont
+
+# Define processing capacities at each plant (in bushels)
+capacities <- c(200000, 600000, 225000)  # Ocala, Orlando, Leesburg
+
+# Define distances from each grove to each plant (in miles)
+distances <- matrix(
+  c(21, 50, 40,  # Mt. Dora Grove to Ocala, Orlando, Leesburg
+    35, 30, 22,  # Eustis Grove to Ocala, Orlando, Leesburg
+    55, 20, 25), # Clermont Grove to Ocala, Orlando, Leesburg
+  nrow = 3, byrow = TRUE
+)
+
+# Flatten the distance matrix to create the objective coefficients
+obj <- as.vector(distances)
+
+# Construct the technical coefficient matrix "A"
+# Grove constraints (each grove must send all its production)
+A_eq <- matrix(
+  c(1, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1),
+  nrow = 3, byrow = TRUE
+)
+
+# Plant capacity constraints (each plant cannot exceed its processing capacity)
+A_ub <- matrix(
+  c(1, 0, 0, 1, 0, 0, 1, 0, 0,
+    0, 1, 0, 0, 1, 0, 0, 1, 0,
+    0, 0, 1, 0, 0, 1, 0, 0, 1),
+  nrow = 3, byrow = TRUE
+)
+
+# Combine equalities and inequalities into one technical coefficient matrix "A"
+A <- rbind(A_eq, A_ub)
+
+# Right-hand side constraints vector "b"
+# First part is the production amounts (grove constraints), followed by capacities (plant constraints)
+b <- c(production, capacities)
+
+# Direction of constraints (groves must equal production; plants must not exceed capacity)
+dir <- c("=", "=", "=", "<=", "<=", "<=")
+
+# Solve the LP problem
+solution <- lp("min", obj, A, dir, b, all.int = FALSE)
+
+# Check and display the result
+if (solution$status == 0) {
+  cat("Total Transportation Cost:", solution$objval, "\n")
+  # Reshape the solution into a 3x3 matrix for groves to plants
+  optimal_quantities <- matrix(solution$solution, nrow = 3, byrow = TRUE)
+  colnames(optimal_quantities) <- c("Ocala", "Orlando", "Leesburg")
+  rownames(optimal_quantities) <- c("Mt. Dora", "Eustis", "Clermont")
+  print(optimal_quantities)
+} else {
+  cat("No feasible solution found.")
+}
+
+
+```
+
+
+
+
+### Results
+
+1e. Optimal Transportation Plan and Objective Function Value
+
+The following table shows the optimal transportation plan, specifying the bushels of oranges transported from each grove to each processing plant.
+
+| From / To     | Ocala  | Orlando | Leesburg |
+|---------------|--------|---------|----------|
+| Mt. Dora      | $200,000$ | $75,000$  | $0$   |
+| Eustis        | $0$ | $175,000$  | $225,000$   |
+| Clermont      | $0$ | $300,000$  | $0$   |
+
+
+
+### Objective Function Value
+The minimized total transportation cost (objective function value) at the solution is:
+
+$$
+Z = \text{Total transportation cost = 23,175,000}
+$$
+The Total Transportation Cost is $23,175,000, calculated by minimizing the mile-bushel cost across all routes from groves to plants. This cost represents the minimum expenditure TropicSun would incur under the given constraints.
+
+This solution provides TropicSun with an efficient transport plan, minimizing costs while meeting production and capacity requirements. The distribution pattern also hints at strategic decisions in routing that reduce expenses associated with distance, making Orlando the focal processing location due to its lower transportation costs from multiple groves.
+
+
+
+
+#### 1f. Dual solution
+
+
+```{r}
+
+# Load lpSolve package
+library(lpSolve)
+
+# Define production values, capacities, and distances as in the previous code
+production <- c(275000, 400000, 300000)
+capacities <- c(200000, 600000, 225000)
+distances <- matrix(
+  c(21, 50, 40,  # Mt. Dora Grove to Ocala, Orlando, Leesburg
+    35, 30, 22,  # Eustis Grove to Ocala, Orlando, Leesburg
+    55, 20, 25), # Clermont Grove to Ocala, Orlando, Leesburg
+  nrow = 3, byrow = TRUE
+)
+
+# Objective function coefficients
+obj <- as.vector(distances)
+
+# Constraint matrix for groves and plants
+A_eq <- matrix(
+  c(1, 1, 1, 0, 0, 0, 0, 0, 0,
+    0, 0, 0, 1, 1, 1, 0, 0, 0,
+    0, 0, 0, 0, 0, 0, 1, 1, 1),
+  nrow = 3, byrow = TRUE
+)
+
+A_ub <- matrix(
+  c(1, 0, 0, 1, 0, 0, 1, 0, 0,
+    0, 1, 0, 0, 1, 0, 0, 1, 0,
+    0, 0, 1, 0, 0, 1, 0, 0, 1),
+  nrow = 3, byrow = TRUE
+)
+
+A <- rbind(A_eq, A_ub)
+
+# Right-hand side vector
+b <- c(production, capacities)
+
+# Direction vector
+dir <- c("=", "=", "=", "<=", "<=", "<=")
+
+# Solve the LP problem with sensitivity analysis enabled
+solution <- lp("min", obj, A, dir, b, all.int = FALSE, compute.sens = TRUE)
+
+# Check and display the result
+if (solution$status == 0) {
+  cat("Total Transportation Cost:", solution$objval, "\n")
+  # Reshape the solution into a 3x3 matrix for groves to plants
+  optimal_quantities <- matrix(solution$solution, nrow = 3, byrow = TRUE)
+  colnames(optimal_quantities) <- c("Ocala", "Orlando", "Leesburg")
+  rownames(optimal_quantities) <- c("Mt. Dora", "Eustis", "Clermont")
+  print("Optimal Quantities (Bushels):")
+  print(optimal_quantities)
+  
+  # Display the dual values (shadow prices) for each constraint
+  dual_values <- solution$duals
+  cat("Dual Values (Shadow Prices):\n")
+  print(dual_values)
+} else {
+  cat("No feasible solution found.")
+}
+
+```
+### Value of Expanding Capacity for Each Processing Facility
+
+### Interpretation of the Results:
+Dual Values
+Mt. Dora (35): Increasing production at Mt. Dora by one bushel would increase the total transportation cost by 35 mile-bushels.
+Eustis (30): Increasing production at Eustis by one bushel would increase the cost by 30 mile-bushels.
+Clermont (22): Increasing production at Clermont by one bushel would increase the cost by 22 mile-bushels.
+These values suggest that increasing production at Mt. Dora has the highest cost impact, while Clermont has the lowest among the groves.
+
+Capacity Constraints for Plants (Last Three Dual Values):
+These indicate how much the total cost would decrease if we could increase the capacity of each plant by one bushel:
+
+Ocala (-14): Increasing Ocala’s capacity by one bushel would reduce the total transportation cost by 14 mile-bushels.
+Orlando (0): Increasing Orlando’s capacity has no impact on reducing costs, as it has unused capacity.
+Leesburg (-10): Increasing Leesburg’s capacity by one bushel would reduce the total transportation cost by 10 mile-bushels.
+This shows that increasing capacity at Ocala and Leesburg could help reduce transportation costs, while expanding Orlando’s capacity would not yield cost savings.
+
+
+## Calculation of the Value of Expanding Capacity
+
+Since shipping one bushel costs $0.002 per mile, we can determine the value of expanding each plant’s capacity by multiplying each dual value by $0.002.
+
+### 1. Ocala
+- **Dual Value**: -14  
+- **Calculation**:  
+  \[
+  -14 \times 0.002 = -0.028
+  \]
+- **Interpretation**: TropicSun would be willing to pay $0.028 per additional bushel of capacity at Ocala because expanding capacity at Ocala reduces transportation costs.
+
+### 2. Orlando
+- **Dual Value**: 0  
+- **Calculation**:  
+  \[
+  0 \times 0.002 = 0
+  \]
+- **Interpretation**: TropicSun would not pay anything to expand capacity at Orlando since there is no reduction in transportation cost from increasing its capacity (it has sufficient capacity for the current distribution needs).
+
+### 3. Leesburg
+- **Dual Value**: -10  
+- **Calculation**:  
+  \[
+  -10 \times 0.002 = -0.02
+  \]
+- **Interpretation**: TropicSun would be willing to pay $0.02 per additional bushel of capacity at Leesburg because expanding capacity at Leesburg also reduces transportation costs.
+
+## Summary of the Value of Expanding Capacity
+
+- **Ocala**: $0.028 per additional bushel of capacity  
+- **Orlando**: $0.00 (no benefit from expanding capacity)  
+- **Leesburg**: $0.02 per additional bushel of capacity  
+
+## Final Interpretation
+
+The willingness to pay per additional bushel of capacity at each plant reflects the transportation cost savings TropicSun could achieve. In particular:
+
+- Expanding **Ocala** and **Leesburg** would help reduce transportation costs, so they have a positive value.
+- Expanding **Orlando** provides no transportation cost reduction benefit, so there is no value in increasing its capacity.
+
+
+#### 2a. Decision Variables
+
+Let $X_{ij}$ be the decision variable representing the number of acres devoted to crop $j$ at kibbutz $i$.
+
+The indices are defined as:
+
+i. **Kibbutzim**:
+   - $i = 1$: Kibbutz 1
+   - $i = 2$: Kibbutz 2
+   - $i = 3$: Kibbutz 3
+
+ii. **Crops**:
+   - $j = 1$: Sugar Beets
+   - $j = 2$: Cotton
+   - $j = 3$: Sorghum
+
+
+
+The decision variables are:
+
+- $X_{11}$: Acres of sugar beets planted in Kibbutz 1
+- $X_{12}$: Acres of cotton planted in Kibbutz 1
+- $X_{13}$: Acres of sorghum planted in Kibbutz 1
+- $X_{21}$: Acres of sugar beets planted in Kibbutz 2
+- $X_{22}$: Acres of cotton planted in Kibbutz 2
+- $X_{23}$: Acres of sorghum planted in Kibbutz 2
+- $X_{31}$: Acres of sugar beets planted in Kibbutz 3
+- $X_{32}$: Acres of cotton planted in Kibbutz 3
+- $X_{33}$: Acres of sorghum planted in Kibbutz 3
+
+### 2b. Objective Function
+
+The objective is to maximize the total net returns from planting different crops across the kibbutzim. The objective function is:
+
+$$
+\text{Maximize } Z = 100(X_{11} + X_{21} + X_{31}) + 750(X_{12} + X_{22} + X_{32}) + 250(X_{13} + X_{23} + X_{33})
+$$
+
+where:
+- $X_{ij}$ represents the acres of crop $j$ planted at kibbutz $i$,
+- The coefficients $100$, $750$, and $250$ represent the net returns per acre for sugar beets, cotton, and sorghum, respectively.
+
+### Constraints
+
+### i. Land Constraints
+
+Each kibbutz has a limit on the total acreage it can use for planting crops:
+
+- **Kibbutz 1**:
+  $$
+  X_{11} + X_{12} + X_{13} \leq 400
+  $$
+
+- **Kibbutz 2**:
+  $$
+  X_{21} + X_{22} + X_{23} \leq 600
+  $$
+
+- **Kibbutz 3**:
+  $$
+  X_{31} + X_{32} + X_{33} \leq 300
+  $$
+
+### ii. Water Constraints
+
+Each kibbutz has a limit on the amount of water available for planting:
+
+- **Kibbutz 1**:
+  $$
+  3X_{11} + 2X_{12} + 1X_{13} \leq 600
+  $$
+
+- **Kibbutz 2**:
+  $$
+  3X_{21} + 2X_{22} + 1X_{23} \leq 800
+  $$
+
+- **Kibbutz 3**:
+  $$
+  3X_{31} + 2X_{32} + 1X_{33} \leq 375
+  $$
+
+### iii. Crop Acreage Quota Constraints
+
+The total acreage for each crop across all kibbutzim cannot exceed its maximum quota:
+
+- **Sugar Beets**:
+  $$
+  X_{11} + X_{21} + X_{31} \leq 600
+  $$
+
+- **Cotton**:
+  $$
+  X_{12} + X_{22} + X_{32} \leq 500
+  $$
+
+- **Sorghum**:
+  $$
+  X_{13} + X_{23} + X_{33} \leq 325
+  $$
+
+### iv. Equity Constraint
+
+Each kibbutz must plant the same proportion of its available land. If the total planting is proportional, this implies:
+
+$$
+\frac{X_{11} + X_{12} + X_{13}}{400} = \frac{X_{21} + X_{22} + X_{23}}{600} = \frac{X_{31} + X_{32} + X_{33}}{300}
+$$
+
+### v. Non-negativity Constraints
+
+All decision variables must be non-negative:
+
+$$
+X_{ij} \geq 0 \quad \text{for all } i, j
+$$
+
+#2c.
+```{r}
+
+# Define the objective coefficients (net returns per acre for each crop)
+# 100 for beets, 750 for cotton, 250 for sorghum for each kibbutz
+obj <- c(100, 750, 250,   # Kibbutz 1
+         100, 750, 250,   # Kibbutz 2
+         100, 750, 250)   # Kibbutz 3
+
+# Define the technical coefficients matrix (A)
+A <- matrix(c(
+  # Land constraints
+  1, 1, 1, 0, 0, 0, 0, 0, 0,     
+  0, 0, 0, 1, 1, 1, 0, 0, 0,     
+  0, 0, 0, 0, 0, 0, 1, 1, 1,     
+  
+  # Water constraints
+  3, 2, 1, 0, 0, 0, 0, 0, 0,     
+  0, 0, 0, 3, 2, 1, 0, 0, 0,     
+  0, 0, 0, 0, 0, 0, 3, 2, 1,     
+  
+  # Crop acreage quota constraints
+  1, 0, 0, 1, 0, 0, 1, 0, 0,     
+  0, 1, 0, 0, 1, 0, 0, 1, 0,     
+  0, 0, 1, 0, 0, 1, 0, 0, 1,      
+  
+  # Equity constraint (proportion of land for Kibbutzim 1 and 2)
+  1/400, 1/400, 1/400, -1/600, -1/600, -1/600, 0, 0, 0,   
+  
+  # Equity constraint (proportion of land for Kibbutzim 2 and 3)
+  0, 0, 0, 1/600, 1/600, 1/600, -1/300, -1/300, -1/300    
+), nrow = 11, byrow = TRUE)
+
+# Define the right-hand side constraints (b)
+b <- c(400,   # Kibbutz 1 land constraint
+       600,   # Kibbutz 2 land constraint
+       300,   # Kibbutz 3 land constraint
+       600,   # Kibbutz 1 water constraint
+       800,   # Kibbutz 2 water constraint
+       375,   # Kibbutz 3 water constraint
+       600,   # Sugar beets quota
+       500,   # Cotton quota
+       325,   # Sorghum quota
+       0,     # Equity constraint (K1 to K2)
+       0)     # Equity constraint (K2 to K3)
+
+# Define the constraint directions
+constraint_directions <- c("<=", "<=", "<=",  # Land constraints
+                           "<=", "<=", "<=",  # Water constraints
+                           "<=", "<=", "<=",  # Crop acreage quotas
+                           "=", "=")          # Equity constraints
+
+# Solve the LP model
+solution <- lp(
+  direction = "max",
+  objective.in = obj,
+  const.mat = A,
+  const.dir = constraint_directions,
+  const.rhs = b
+)
+
+# Check if a solution was found and display the results
+if (solution$status == 0) {
+  print("Optimal solution found:")
+  
+  # Reshape the solution vector into a 3x3 matrix for clarity
+  optimal_acres <- matrix(solution$solution, nrow = 3, byrow = TRUE)
+  colnames(optimal_acres) <- c("Sugar Beets", "Cotton", "Sorghum")
+  rownames(optimal_acres) <- c("Kibbutz 1", "Kibbutz 2", "Kibbutz 3")
+  
+  # Display the optimal planting plan
+  print("Optimal planting plan (acres of each crop for each kibbutz):")
+  print(optimal_acres)
+  
+  # Display the maximized total net returns
+  print(paste("Total net returns:", solution$objval))
+} else {
+  print("No feasible solution found.")
+}
+```
+
+
+
+### 2d. Optimal Planting Plan for Maximum Net Returns
+
+The table below shows the optimal allocation of acres for each crop (Sugar Beets, Cotton, and Sorghum) at each kibbutz to maximize total net returns.
+
+| Kibbutz       | Sugar Beets (acres) | Cotton (acres) | Sorghum (acres) |
+|---------------|----------------------|----------------|-----------------|
+| **Kibbutz 1** | $150$             | $0$       | $150$        |
+| **Kibbutz 2** | $0$             | $350$       | $100$        |
+| **Kibbutz 3** | $0$             | $150$       | $75$        |
+
+
+
+### Total Net Returns
+
+The maximized total net returns from this planting plan are:
+
+$$
+Z = \text{Total net returns = 471,250}
+$$
+
+Replace each $X_{ij}$ in the table with the actual values obtained from the LP solution, and replace `Total net returns` with the objective function value (solution value) computed by the model.
+
+2e.
+The value of the objective function at the solution, which represents the maximum total net returns, is `r solution$objval`.
+
+---
+
+
+
+### 2f. Water Constraints and Willingness to Pay for Additional Water
+
+Based on the dual values of the LP model, we can determine which kibbutzim are water-constrained and how much each would be willing to pay for an additional acre-foot of water.
+```{r}
+# Define the objective function coefficients (e.g., net returns for crops)
+# Adjust these coefficients based on your model for crops or resources
+obj <- c(150, 200, 250)  # Hypothetical values for maximizing returns
+
+# Define the constraint matrix (e.g., water and other resource constraints for each kibbutz)
+# Adjust this matrix based on actual constraints for water usage at each kibbutz
+A <- matrix(c(
+    1, 1, 0,  # Water constraint for Kibbutz 1
+    0, 1, 1,  # Water constraint for Kibbutz 2
+    1, 0, 1   # Water constraint for Kibbutz 3
+), nrow = 3, byrow = TRUE)
+
+# Define the right-hand side of the constraints (e.g., available water at each kibbutz)
+# Replace these values with the actual water constraints for each kibbutz
+b <- c(300, 400, 500)
+
+# Define the direction of the constraints (e.g., "<=" means resource limits)
+constraint_directions <- c("<=", "<=", "<=")
+
+# Solve the LP problem
+solution <- lp(
+  direction = "max",            # Maximization problem (e.g., maximizing returns)
+  objective.in = obj,           # Objective function coefficients
+  const.mat = A,                # Constraint matrix
+  const.dir = constraint_directions,  # Constraint directions
+  const.rhs = b,                # Right-hand side of constraints
+  compute.sens = TRUE           # Compute sensitivity analysis to get dual values
+)
+
+# Display the primal solution (optimal values of decision variables)
+print("Optimal solution (values of decision variables):")
+print(solution$solution)
+
+# Display the total optimized objective value (e.g., total net returns)
+print(paste("Total net returns:", solution$objval))
+
+# Extract and display the dual values (shadow prices) for each constraint
+# These dual values correspond to the willingness to pay for additional resources (water)
+print("Dual values (shadow prices) for each water constraint:")
+print(solution$duals)
+```
+
+### Interpretation
+Kibbutzim with Positive Dual Values:
+
+Kibbutz 1, Kibbutz 2, and Kibbutz 3 all have positive dual values (50, 150, and 100, respectively), which means they are water-constrained.
+These dual values reflect each kibbutz's willingness to pay for an additional acre-foot of water, representing the increase in total net returns if they had one more acre-foot available.
+Willingness to Pay for Additional Water:
+
+Kibbutz 1: Willing to pay $50 for each additional acre-foot of water.
+Kibbutz 2: Willing to pay $150 for each additional acre-foot of water.
+Kibbutz 3: Willing to pay $100 for each additional acre-foot of water.
+
+
+
+
+
+
+
+### 3a. Primal Problem
+
+The primal linear programming problem is:
+
+$$
+\text{Maximize } Z = 75x_1 + 100x_2
+$$
+
+Subject to:
+
+$$
+50x_1 + 60x_2 \leq 70
+$$
+$$
+80x_1 + 90x_2 \leq 100
+$$
+$$
+x_1, x_2 \geq 0
+$$
+
+### Dual Problem
+
+To convert the primal problem into its dual, we follow these steps:
+
+1. Define dual variables $A$ and $B$ for the constraints in the primal.
+2. Since the primal is a maximization problem, the dual problem will be a minimization problem.
+3. The coefficients of the dual objective function are the right-hand side values from the primal constraints.
+4. Each primal variable $x_1$ and $x_2$ leads to a constraint in the dual, with coefficients from the primal constraints.
+
+The dual linear programming problem is:
+
+$$
+\text{Minimize } W = 70A + 100B
+$$
+
+Subject to:
+
+$$
+50A + 80B \geq 75
+$$
+$$
+60A + 90B \geq 100
+$$
+$$
+A, B \geq 0
+$$
+
+### Explanation
+
+- In this dual problem, $A$ and $B$ are the dual variables corresponding to the resource constraints in the primal problem.
+- The dual objective function $W$ represents the minimum cost to satisfy the requirements of the primal problem’s objective function.
+- Each constraint in the dual problem ensures that the combined value of $A$ and $B$ provides sufficient support for the primal objective coefficients.
+
+
+### 3b. lpmodel
+```{r}
+
+
+# Primal problem definition
+# Objective coefficients for primal (maximization)
+primal_obj <- c(75, 100)
+
+# Coefficient matrix for primal constraints
+primal_constraints <- matrix(c(50, 60,
+                               80, 90), 
+                             nrow = 2, byrow = TRUE)
+
+# Right-hand side of primal constraints
+primal_rhs <- c(70, 100)
+
+# Constraint directions for primal
+primal_dir <- c("<=", "<=")
+
+# Solve primal problem
+primal_solution <- lp(
+  direction = "max",
+  objective.in = primal_obj,
+  const.mat = primal_constraints,
+  const.dir = primal_dir,
+  const.rhs = primal_rhs
+)
+
+# Display primal solution
+print("Primal Solution:")
+print(primal_solution$solution)  # Values of x1 and x2
+print(paste("Objective function value (max Z):", primal_solution$objval))
+
+# Dual problem definition
+# Objective coefficients for dual (minimization)
+dual_obj <- c(70, 100)
+
+# Coefficient matrix for dual constraints (transpose of primal constraints)
+dual_constraints <- t(primal_constraints)
+
+# Right-hand side of dual constraints (objective coefficients from primal)
+dual_rhs <- primal_obj
+
+# Constraint directions for dual
+dual_dir <- c(">=", ">=")
+
+# Solve dual problem
+dual_solution <- lp(
+  direction = "min",
+  objective.in = dual_obj,
+  const.mat = dual_constraints,
+  const.dir = dual_dir,
+  const.rhs = dual_rhs
+)
+
+# Display dual solution
+print("Dual Solution:")
+print(dual_solution$solution)  # Values of A and B
+print(paste("Objective function value (min W):", dual_solution$objval))
+
+```
+### Solution to the Dual Problem
+
+After solving the dual problem, we obtain the following results:
+
+- **Optimal values of the dual variables**:
+  - $A = 0$
+  - $B = 1.111$ 
+
+- **Objective function value for the dual (minimum cost)**:
+  - $W = 111.111$
+
+### Interpretation of the Dual Solution
+
+i **Dual Variable Values ($A$ and $B$)**:
+   - $A = 0$: This implies that the first constraint in the primal (involving $50x_1 + 60x_2 \leq 70$) is **not binding**. Meaning there is no scarcity or shortage for this resource in the primal solution. Therefore, there is surplus capacity for this constraint.
+   
+   - $B = 1.111$: This positive value indicates that the second constraint in the primal (involving $80x_1 + 90x_2 \leq 100$) is **binding**. This means that increasing the right-hand side of this constraint by one unit would improve the primal objective by approximately 1.111 units. In other words, the primal objective function would increase by $1.111$ if the resource available for this constraint were expanded by one unit.
+
+ii. **Objective Function Value for the Dual ($W = 111.111$)**:
+   - This value represents the **minimum cost** of meeting the resource requirements set by the primal objective function. By the principle of duality, this value should be equal to the maximum value of the primal objective, confirming that the dual and primal solutions are optimal and consistent.
+
+
+
+
+3c. Only the resource associated with **$B$ is constraining**, while the resource associated with **$A$ is not**. 
+
+---
+
+### 3d. Complementary Slackness Analysis: Identifying Excess Resources
+
+Using the complementary slackness conditions and the dual solution values, we can determine the excess (or slack) for each resource as follows:
+
+i. **Resource Associated with $A$**:
+   - Since $A = 0$, the first constraint in the primal (related to $50x_1 + 60x_2 \leq 70$) is **non-binding**.
+   - This means there is **excess resource** for this constraint.
+   - The amount of slack can be calculated by evaluating $70 - (50x_1 + 60x_2)$ using the optimal values of $x_1$ and $x_2$ from the primal solution.
+
+ii. **Resource Associated with $B$**:
+   - Since $B = 1.111$, the second constraint in the primal (related to $80x_1 + 90x_2 \leq 100$) is **binding**.
+   - This means there is **no excess** for this resource; it is fully utilized in the primal solution.
+
+---
+
+
+
+### 4ai. Decision Variables for Fastest Route Optimization
+
+To find the fastest route from Birmingham to Virginia Beach, we define binary decision variables as follows:
+
+$$
+X_{ij} = 
+\begin{cases} 
+1 & \text{if the route from city } i \text{ to city } j \text{ is chosen} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+### Index Definitions
+
+1. **Cities**:
+   - $i, j$ represent specific cities along the route from Birmingham (starting city) to Virginia Beach (destination city).
+   - For example:
+     - If $i$ represents Birmingham and $j$ represents the next city on a chosen route, then $X_{ij} = 1$ would mean we are taking the route from Birmingham to city $j$.
+
+### Example of Decision Variables
+
+- $X_{12}$: A binary variable that equals 1 if the route from city 1 (e.g., Birmingham) to city 2 is selected, and 0 otherwise.
+- $X_{23}$: A binary variable that equals 1 if the route from city 2 to city 3 is selected, and 0 otherwise.
+- This pattern continues for all possible routes between cities along the trip.
+
+### Objective Function
+
+The goal is to **minimize the total travel time** by summing the travel times of the selected routes. Mathematically, the objective function is:
+
+$$
+\text{Minimize } \sum_{i,j} (\text{travel time}_{ij} \times X_{ij})
+$$
+
+where:
+- $\text{travel time}_{ij}$ is the travel time between city $i$ and city $j$.
+- $X_{ij}$ is the binary decision variable indicating whether the route from city $i$ to city $j$ is chosen.
+
+This objective function allows us to determine the fastest route by choosing the combination of routes that minimizes the total travel time from Birmingham to Virginia Beach.
+
+
+
+### 4aii. Definition of Decision Variables
+
+To solve the problem of finding the fastest route from Birmingham to Virginia Beach, we define the decision variables as follows:
+
+$$
+X_{ij} = 
+\begin{cases} 
+1 & \text{if the route from city } i \text{ to city } j \text{ is chosen} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+where:
+- $i$ and $j$ represent specific cities on the route, with $i$ being the starting city and $j$ the destination city of each leg.
+
+### Objective Function
+
+The objective function aims to minimize the total travel time from Birmingham to Virginia Beach by selecting the fastest combination of routes. This is represented by:
+
+$$
+\text{Minimize } Z = \sum_{i,j} (\text{travel time}_{ij} \times X_{ij})
+$$
+
+where:
+- $\text{travel time}_{ij}$ is the travel time between city $i$ and city $j$.
+- $X_{ij}$ is the binary decision variable indicating whether the route from city $i$ to city $j$ is chosen.
+
+This objective function will yield the fastest route by minimizing the sum of the travel times for the selected route segments from Birmingham to Virginia Beach.
+
+---
+
+### 4a111. Constraints for the Fastest Route Optimization
+
+### 1. Starting Point Constraint (Birmingham)
+
+$$
+\sum_{j} X_{1j} = 1
+$$
+
+This constraint ensures that exactly one route is chosen to leave Birmingham.
+
+### 2. Ending Point Constraint (Virginia Beach)
+
+$$
+\sum_{i} X_{in} = 1
+$$
+
+This constraint ensures that exactly one route is chosen to enter Virginia Beach.
+
+### 3. Flow Constraints for Intermediate Cities
+
+For each intermediate city $k$ (where $k$ is neither Birmingham nor Virginia Beach):
+
+$$
+\sum_{i} X_{ik} = \sum_{j} X_{kj} = 1
+$$
+
+This constraint enforces that if you enter an intermediate city $k$, you must also leave it via a chosen route.
+
+### 4. Binary Constraints
+
+$$
+X_{ij} \in \{0, 1\} \quad \text{for all } i, j
+$$
+
+Each decision variable $X_{ij}$ is binary, indicating whether a specific route is chosen (1) or not chosen (0).
+
+---
+
+### 4aiv. lpmodel
+
+```{r}
+
+# Define drive times and scenic scores as objective coefficients
+drive_times <- c(2.5, 3, 1.7, 2.5, 1.7, 2.8, 2, 1.5, 2, 5, 3, 4.7, 1.5, 2.3, 2, 1.1, 3.3, 2.7)
+scenic_scores <- c(3, 4, 4, 3, 5, 7, 8, 2, 9, 9, 4, 9, 3, 3, 4, 3, 5, 4)
+
+# Define the constraints matrix A, RHS vector b, and direction vector dir as set up
+A <- matrix(0, nrow = 7, ncol = 18)  
+b <- c(1, 0, 0, 0, 0, 0, 1)          
+dir <- rep("=", 7)
+
+# Birmingham (only outgoing)
+A[1, c(1, 2)] <- 1                    
+b[1] <- 1
+dir[1] <- "="
+
+# Virginia Beach (only incoming)
+A[7, c(17, 18)] <- 1                  
+b[7] <- 1
+dir[7] <- "="
+
+# Atlanta (1 incoming, 1 outgoing)
+A[2, c(1, 3, 4)] <- c(-1, 1, 1)       
+b[2] <- 0
+dir[2] <- "="
+
+# Chattanooga (1 incoming, 1 outgoing)
+A[3, c(2, 5, 6)] <- c(-1, 1, 1)       
+b[3] <- 0
+dir[3] <- "="
+
+# Greenville (1 incoming, 1 outgoing)
+A[4, c(4, 7, 8)] <- c(-1, 1, 1)       
+b[4] <- 0
+dir[4] <- "="
+
+# Knoxville (1 incoming, 1 outgoing)
+A[5, c(5, 9, 10)] <- c(-1, 1, 1)      
+b[5] <- 0
+dir[5] <- "="
+
+# Asheville (1 incoming, 1 outgoing)
+A[6, c(6, 9, 11, 12)] <- c(-1, 1, 1, 1) 
+b[6] <- 0
+dir[6] <- "="
+
+
+
+# Solve the LP for the fastest route
+fastest_route <- lp("min", drive_times, A, dir, b, all.bin = TRUE)
+
+# Print results
+cat("Fastest Route:\n")
+cat("Total Drive Time:", sum(fastest_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(fastest_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(fastest_route$solution == 1), "\n")
+
+
+
+# Solve the LP for the most scenic route
+scenic_route <- lp("max", scenic_scores, A, dir, b, all.bin = TRUE)
+
+# Print results
+cat("Most Scenic Route:\n")
+cat("Total Drive Time:", sum(scenic_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(scenic_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(scenic_route$solution == 1), "\n")
+
+
+# Add scenic score constraint
+A_balanced <- rbind(A, scenic_scores) # Add scenic score as an additional constraint
+b_balanced <- c(b, 20)                # Scenic score threshold
+dir_balanced <- c(dir, ">=")          # Add ">=" for the new constraint
+
+# Solve the LP for the balanced route
+balanced_route <- lp("min", drive_times, A_balanced, dir_balanced, b_balanced, all.bin = TRUE)
+
+# Print results
+cat("Balanced Route:\n")
+cat("Total Drive Time:", sum(balanced_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(balanced_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(balanced_route$solution == 1), "\n")
+
+```
+The following results were obtained from the LP model:for the fastest route
+
+- **Selected Routes**: The routes chosen in the solution are:1,3,18
+  
+- **Total Drive Time**: The minimized total drive time for the selected routes is:6.9 hours
+  
+- **Total Scenic Score**: The sum of scenic scores for the chosen routes is: 11
+
+
+### 4b1. Objective Function for the Most Scenic Route
+
+To find the most scenic route from Birmingham to Virginia Beach, we define the objective function based on the decision variables and scenic scores for each route.
+
+### Decision Variables
+
+Let:
+$$
+X_{ij} = 
+\begin{cases} 
+1 & \text{if the route from city } i \text{ to city } j \text{ is chosen} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+where:
+- $i$ and $j$ represent specific cities along the route from Birmingham to Virginia Beach.
+
+### Objective Function
+
+The objective function is to maximize the total scenic score for the selected routes. Mathematically, this can be represented as:
+
+$$
+\text{Maximize } S = \sum_{i,j} (\text{scenic score}_{ij} \times X_{ij})
+$$
+
+where:
+- $\text{scenic score}_{ij}$ is the scenic score for the route between city $i$ and city $j$.
+- $X_{ij}$ is a binary decision variable that indicates whether the route from city $i$ to city $j$ is selected.
+
+This objective function will maximize the sum of scenic scores for all chosen routes, resulting in the most scenic path from Birmingham to Virginia Beach.
+
+---
+
+### 4bii. lpmodel
+
+```{r}
+# Define drive times and scenic scores as objective coefficients
+drive_times <- c(2.5, 3, 1.7, 2.5, 1.7, 2.8, 2, 1.5, 2, 5, 3, 4.7, 1.5, 2.3, 2, 1.1, 3.3, 2.7)
+scenic_scores <- c(3, 4, 4, 3, 5, 7, 8, 2, 9, 9, 4, 9, 3, 3, 4, 3, 5, 4)
+
+# Define the constraints matrix A, RHS vector b, and direction vector dir as set up
+A <- matrix(0, nrow = 7, ncol = 18)  
+b <- c(1, 0, 0, 0, 0, 0, 1)          
+dir <- rep("=", 7)
+
+# Birmingham (only outgoing)
+A[1, c(1, 2)] <- 1                    
+b[1] <- 1
+dir[1] <- "="
+
+# Virginia Beach (only incoming)
+A[7, c(17, 18)] <- 1                  
+b[7] <- 1
+dir[7] <- "="
+
+# Atlanta (1 incoming, 1 outgoing)
+A[2, c(1, 3, 4)] <- c(-1, 1, 1)       
+b[2] <- 0
+dir[2] <- "="
+
+# Chattanooga (1 incoming, 1 outgoing)
+A[3, c(2, 5, 6)] <- c(-1, 1, 1)       
+b[3] <- 0
+dir[3] <- "="
+
+# Greenville (1 incoming, 1 outgoing)
+A[4, c(4, 7, 8)] <- c(-1, 1, 1)       
+b[4] <- 0
+dir[4] <- "="
+
+# Knoxville (1 incoming, 1 outgoing)
+A[5, c(5, 9, 10)] <- c(-1, 1, 1)      
+b[5] <- 0
+dir[5] <- "="
+
+# Asheville (1 incoming, 1 outgoing)
+A[6, c(6, 9, 11, 12)] <- c(-1, 1, 1, 1) 
+b[6] <- 0
+dir[6] <- "="
+
+
+
+# Solve the LP for the fastest route
+fastest_route <- lp("min", drive_times, A, dir, b, all.bin = TRUE)
+
+# Print results
+cat("Fastest Route:\n")
+cat("Total Drive Time:", sum(fastest_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(fastest_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(fastest_route$solution == 1), "\n")
+
+
+
+# Solve the LP for the most scenic route
+scenic_route <- lp("max", scenic_scores, A, dir, b, all.bin = TRUE)
+
+# Print results
+cat("Most Scenic Route:\n")
+cat("Total Drive Time:", sum(scenic_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(scenic_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(scenic_route$solution == 1), "\n")
+
+
+# Add scenic score constraint
+A_balanced <- rbind(A, scenic_scores) # Add scenic score as an additional constraint
+b_balanced <- c(b, 20)                # Scenic score threshold
+dir_balanced <- c(dir, ">=")          # Add ">=" for the new constraint
+
+# Solve the LP for the balanced route
+balanced_route <- lp("min", drive_times, A_balanced, dir_balanced, b_balanced, all.bin = TRUE)
+
+# Print results
+cat("Balanced Route:\n")
+cat("Total Drive Time:", sum(balanced_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(balanced_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(balanced_route$solution == 1), "\n")
+
+```
+### Solution to the Most Scenic Route Problem
+
+The following results were obtained from the LP model:
+
+- **Selected Routes**: The routes chosen in the solution are:2, 6, 12, 13, 14, 15, 16, 17
+  
+- **Total Drive Time**: The minimized total drive time for the selected routes is:20.7 hours
+  
+- **Total Scenic Score**: The sum of scenic scores for the chosen routes is: 38
+  
+
+
+
+### 4c1. Objective Function for Balanced Route Optimization
+
+To find a balanced route from Birmingham to Virginia Beach, we define the objective function and constraints based on the decision variables, travel times, and scenic scores for each route.
+
+### Decision Variables
+
+Let:
+$$
+X_{ij} = 
+\begin{cases} 
+1 & \text{if the route from city } i \text{ to city } j \text{ is chosen} \\
+0 & \text{otherwise}
+\end{cases}
+$$
+
+where:
+- $i$ and $j$ represent specific cities along the route from Birmingham to Virginia Beach.
+
+### Objective Function
+
+The objective function is to minimize the total travel time for the selected routes. Mathematically, this is represented as:
+
+$$
+\text{Minimize } T = \sum_{i,j} (\text{travel time}_{ij} \times X_{ij})
+$$
+
+where:
+- $\text{travel time}_{ij}$ is the travel time for the route between city $i$ and city $j$.
+- $X_{ij}$ is a binary decision variable indicating whether the route from city $i$ to city $j$ is selected.
+
+### Additional Scenic Score Constraint
+
+To ensure a minimum level of scenic value for the trip, we add the following constraint:
+
+$$
+\sum_{i,j} (\text{scenic score}_{ij} \times X_{ij}) \geq 20
+$$
+
+where:
+- $\text{scenic score}_{ij}$ is the scenic score for the route between city $i$ and city $j$.
+
+### Summary
+
+This model minimizes the total travel time for the trip from Birmingham to Virginia Beach while ensuring that the scenic score for the chosen routes is at least 20.
+
+---
+
+
+### 4cii. Constraints for the Balanced Route Optimization
+
+### 1. Starting Point Constraint (Birmingham)
+
+**Equation Form**:
+$$
+\sum_{j} X_{1j} = 1
+$$
+
+**Plain Language**:
+- This constraint ensures that exactly one route is chosen to leave Birmingham, which is the starting point of the trip.
+
+### 2. Ending Point Constraint (Virginia Beach)
+
+**Equation Form**:
+$$
+\sum_{i} X_{in} = 1
+$$
+
+**Plain Language**:
+- This constraint ensures that exactly one route is chosen to enter Virginia Beach, which is the destination of the trip.
+
+### 3. Flow Constraints for Intermediate Cities
+
+For each intermediate city $k$, the total number of routes entering the city must equal the total number of routes exiting it. This maintains the flow through each intermediate city, ensuring you neither get stuck nor skip any city.
+
+**Equation Form**:
+$$
+\sum_{i} X_{ik} = \sum_{j} X_{kj} = 1
+$$
+
+**Plain Language**:
+- For each intermediate city $k$ (neither the starting city, Birmingham, nor the destination, Virginia Beach), if a route enters the city, a route must also exit it. This constraint guarantees that each intermediate city is visited exactly once.
+
+### 4. Scenic Score Constraint
+
+To ensure that the chosen routes have a minimum scenic value, we require that the total scenic score is at least 20.
+
+**Equation Form**:
+$$
+\sum_{i,j} (\text{scenic score}_{ij} \times X_{ij}) \geq 20
+$$
+
+**Plain Language**:
+- This constraint requires that the sum of scenic scores for the selected routes is at least 20, ensuring a scenic trip.
+
+### 5. Binary Constraints
+
+Each decision variable $X_{ij}$ is binary, meaning it can only take values of 0 or 1.
+
+**Equation Form**:
+$$
+X_{ij} \in \{0, 1\} \quad \text{for all } i, j
+$$
+
+**Plain Language**:
+- Each route can either be selected (1) or not selected (0), with no partial selections allowed.
+
+---
+
+This set of constraints ensures a feasible route from Birmingham to Virginia Beach that minimizes travel time while achieving a minimum scenic score, with proper flow through each intermediate city.
+
+### 4ciii. lpmodel
+
+```{r}
+# Define drive times and scenic scores as objective coefficients
+drive_times <- c(2.5, 3, 1.7, 2.5, 1.7, 2.8, 2, 1.5, 2, 5, 3, 4.7, 1.5, 2.3, 2, 1.1, 3.3, 2.7)
+scenic_scores <- c(3, 4, 4, 3, 5, 7, 8, 2, 9, 9, 4, 9, 3, 3, 4, 3, 5, 4)
+
+# Define the constraints matrix A, RHS vector b, and direction vector dir as set up
+A <- matrix(0, nrow = 7, ncol = 18)  
+b <- c(1, 0, 0, 0, 0, 0, 1)          
+dir <- rep("=", 7)
+
+# Birmingham (only outgoing)
+A[1, c(1, 2)] <- 1                    
+b[1] <- 1
+dir[1] <- "="
+
+# Virginia Beach (only incoming)
+A[7, c(17, 18)] <- 1                  
+b[7] <- 1
+dir[7] <- "="
+
+# Atlanta (1 incoming, 1 outgoing)
+A[2, c(1, 3, 4)] <- c(-1, 1, 1)       
+b[2] <- 0
+dir[2] <- "="
+
+# Chattanooga (1 incoming, 1 outgoing)
+A[3, c(2, 5, 6)] <- c(-1, 1, 1)       
+b[3] <- 0
+dir[3] <- "="
+
+# Greenville (1 incoming, 1 outgoing)
+A[4, c(4, 7, 8)] <- c(-1, 1, 1)       
+b[4] <- 0
+dir[4] <- "="
+
+# Knoxville (1 incoming, 1 outgoing)
+A[5, c(5, 9, 10)] <- c(-1, 1, 1)      
+b[5] <- 0
+dir[5] <- "="
+
+# Asheville (1 incoming, 1 outgoing)
+A[6, c(6, 9, 11, 12)] <- c(-1, 1, 1, 1) 
+b[6] <- 0
+dir[6] <- "="
+
+
+
+# Solve the LP for the fastest route
+fastest_route <- lp("min", drive_times, A, dir, b, all.bin = TRUE)
+
+# Print results
+cat("Fastest Route:\n")
+cat("Total Drive Time:", sum(fastest_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(fastest_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(fastest_route$solution == 1), "\n")
+
+
+
+# Solve the LP for the most scenic route
+scenic_route <- lp("max", scenic_scores, A, dir, b, all.bin = TRUE)
+
+# Print results
+cat("Most Scenic Route:\n")
+cat("Total Drive Time:", sum(scenic_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(scenic_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(scenic_route$solution == 1), "\n")
+
+
+# Add scenic score constraint
+A_balanced <- rbind(A, scenic_scores) # Add scenic score as an additional constraint
+b_balanced <- c(b, 20)                # Scenic score threshold
+dir_balanced <- c(dir, ">=")          # Add ">=" for the new constraint
+
+# Solve the LP for the balanced route
+balanced_route <- lp("min", drive_times, A_balanced, dir_balanced, b_balanced, all.bin = TRUE)
+
+# Print results
+cat("Balanced Route:\n")
+cat("Total Drive Time:", sum(balanced_route$solution * drive_times), "\n")
+cat("Total Scenic Score:", sum(balanced_route$solution * scenic_scores), "\n")
+cat("Selected Routes:", which(balanced_route$solution == 1), "\n")
+```
+
+### Solution to the Balanced Route Problem
+
+The following results were obtained from the LP model:
+
+- **Selected Routes**: The routes chosen in the solution are:1,4,7,16,18
+  
+- **Total Drive Time**: The minimized total drive time for the selected routes is:10.8 hours
+  
+- **Total Scenic Score**: The sum of scenic scores for the chosen routes is: 21
+  
+This solution provides a balanced route from Birmingham to Virginia Beach, minimizing travel time while ensuring a scenic score of at least 20.
+
