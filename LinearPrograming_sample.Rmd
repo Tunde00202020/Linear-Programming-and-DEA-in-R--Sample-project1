@@ -4,6 +4,202 @@ author: "BABATUNDE FATI"
 date: "2024-11-03"
 output: word_document
 ---
+Hypothetical Optimization Problem
+ 1. In this problem, we are working out transportation logistics for TropicSun, a major orange
+ juice producer. TropicSun procures its oranges that it uses for juice from 3 groves: Mt.
+ Dora, Eustis, and Clermont. TropicSun processes its oranges at three processing plants:
+ Ocala, Orlando, and Leesburg. TropicSun just recieved a production report from each of
+ its groves and must process all oranges to ensure nothing goes to waste.
+
+Table 1: TropicSun Grove Production (bu of Oranges)
+Mt Dora grove	275000
+Eustis grove	400000
+clermont grove	300000
+
+ Each processing plant can take in only so many oranges. Based on historical plant capac
+ities, each plant has the following maximum capacities:
+Table 2: TropicSun Processing Plant Capacities (bu of Oranges)
+Ocala plant	200000
+orlando plant	600000
+leesburg plant	225000
+
+Costs of transporting oranges from each grove to each plant varies by its distance. This
+ creates different transportation costs from each grove to each plant. TropicSun must pay
+ a given amount of money per mile-bushel. Its goal is to minimize the total mile-bushels
+ it will take to process all of its produced oranges. The following table shows the driven
+ distances from each grove to each plant.
+Table 3: Mile Distances Between Groves and Plants
+grove	ocala	orlando	leesburg
+mt dora grove	21	50	40
+eustis grove	35	30	22
+clermont grove	55	20	25
+
+(a) Clearly state what your decision variables are in this problem and provide labels to
+ use for your equations. (Write in mathematical labels in Markdown mathematical
+ language.)
+
+(b) Clearly state your objective function and then write the formula for your objective
+ function. (Write the mathematical version of the function in Markdown mathemat
+ical language.)
+
+(c) Clearly state and label all of your constraints for this problem. (Write the mathe
+matical version of each constraint in Markdown mathematical language.)
+
+ (d) Using lpSolve, construct and solve the LP model defining your objective coefficients
+ as “obj”, your technical coefficients as a matrix “A”, and your right hand side con
+straints as “b”. Clearly label your code.
+
+ (e) Display and interpret the solution to the problem (values of your decision variables)
+ to maximize total net returns using a table in Markdown. What is the value of the
+ objective function at the solution?
+
+(f) If shipping one bushel of oranges costs $0.002 per mile, what is the value of expanding
+ the capacity of each processing facility? (Hint, you shouldn’t have to re-run the
+ problem but you will neeed to look at the dual values.)
+
+2. The Southern Confederation of Kibbutzim is a group of three kibbutzim in Israel. Overall
+ planning for this group is done in its Coordination Technical Office. The office is currently
+ planning agricultural production for the upcoming year. The agricultural output of each
+ kibbutz is limited by both the amount of available irrigable land and the quantity of water
+ allocated for irrigation by the Water Commissioner. These data are provided in the table
+ below
+ Table 4: Kibbutz Size and Irrigation Available
+Farm characteristics	1	2	3
+Land (acres)	400	600	300
+Water allocation (acre ft)	600	800	375
+
+ The crops suited for this region include sugar beets, cotton and sorghum. These are being
+ considered for the upcoming season. The crops differ primarily in their expected net
+ return per acre and their consumption of water. In addition the Ministry of Agriculture
+ has set a maximum quota for the total acreage that can be devoted to each of these crops
+ by the Southern Confederation of Kibbutzim, as shown in the table below.
+Table 5: Crop Acreage Quota, Water Consumption, and Net Returns
+crop	max quota(acres)	water consumption (acre ft/acre)	net returns (per acre)
+beets	   600	3	100
+cotton	500	2	750
+sorghum	325	1	250
+
+
+Because of the limited water available for irrigation, the Southern Confederation of Kib
+butzim will not be able to use all its irrigable land for planting crops in the upcoming
+ season. To ensure equity between the three kibbutz, it has been agreed that every kib
+butz will plant the same proportion of its available irrigable land. For example, if kibbutz
+ 1 plants 200 of its available 400 acres, then kibbutz 2 must plant 300 of its 600 acres,
+ while kibbutz 3 plants 150 plants 150 acres of its 300 aces. The job facing the Coordinat
+ing Technical Office is to plan how many acres to devote to each crop at the respective
+ kibbutz while satisfying the given restrictions.
+
+(a) What are your decision variables to maximize the total net returns over the Southern
+ Confederation of Kibbutzim? Be specific in defining them.
+
+ (b) Using markdown’s equation math language, write out your objective function and
+ each constraint. (It may be beneficial to lay it out as a table as we did in lectures.)
+
+(c) Using the package lpSolve, construct the LP problem defining your objective coeffi
+cients as “obj”, your technical coefficients as a matrix “A”, and your right hand side
+ constraints as “b”. Clearly label your code.
+
+(d) Display the solution to the problem (values of your decision variables) to maximize
+ total net returns using a table in Markdown.
+
+(e) What is the value of the objective function at the solution? (Put in a sentence with
+ inline coding).
+
+(f) Based on the dual values of the LP, which if any, of the three kibbutz are water
+ constrained? What would each kibbutz be willing to pay for an additional acre-foot
+ of water?
+
+
+4
+3. Consider the following generic primal linear programming problem. Here you are choos
+ing to produce two goods (x1 and x2q subject to two resource constraints (Resource A
+ and Resource B respectively).
+max X1,X2 Z=75X1 + 100X2
+
+subject to 50X1 + 60X2  <= 70
+80X1 + 90X2 <= 100
+X1, X2 >= 0
+
+(a) Convert this primal problem into its dual and write the result in Markdown.
+ (1)
+ 
+(b) Construct and solve each in R’s lpSolve package. Describe both the objective func
+tion, and solutions to the primal and dual in a sentence. That is, interpret the
+ number’s meaning along with their values.
+ 
+(c) Using the dual’s solution values, which resource is constricting you (A?, B?, Both?).
+ 
+(d) Using complementary slackness conditions, what resources (A or B) do you have in
+ excess and how much?
+
+4. Planning car trips can be the worst but LPs can help us make more informed decisions.
+ Suppose you are planning a car trip from Birmingham AL up to Virginia Beach, VA to
+ visit relatives for Thanksgiving. Along the way, you’ll need to travel through a set of cities.
+ TheAmerican CarAssociation (ACA) provides a handy guide listing the connecting cities,
+ drive time estimates between each city, and scenic scores of each of the sub-trips shown
+ below.
+ Table 6: Drive Times and Scenic Scores for Different Potential Legs of Trip
+Departure index	Departure city	Destination index	Destination city	Drive time (hours)	scenic Score
+1	Birmingham	2	Atlanta	   2.5	3
+1	Birmingham	3	Chattanooga	1.7	7
+2	Atlanta	   3	Chattanooga	2.5	4
+2	Atlanta	   4	Greenville	2.7	3
+3	Chattanooga	4	Greenville	2.8	5
+3	Chattanooga	5	Knoxville	2.5	8
+4	Greenville	5	Knoxville	1.6	2
+4	Greenville	6	Asheville	2.6	9
+5	Knoxville	6	Asheville	3	   4
+5	Knoxville	7	Charlotte	4.7	9
+6	Asheville	7	Charlotte	1.5	3
+6	Asheville	8	Asheville	2.3	3
+7	Charlotte	8	Lynchburg	3	   4
+7	Charlotte	9	Greensboro	1.5	3
+8	Greensboro	9	Raleigh	   2.1	3
+8	Greensboro	10	Lynchburg	3.3	4
+9	Lynchburg	10	Raleigh	   2.7	4
+10	Raleigh	11	Virginia Beach	3.7	5
+
+
+(a) One of your fellow travelers knows that getting up to Virginia Beach earlier is super
+ important and doesn’t want to be left with the drier, white turkey. They want to
+ find the fastest route from Birmingham to Virginia Beach.
+ 
+i. Clearly state and mathematically define the decision variables for the optimiza
+tion problem.
+
+ii. Definition of the decision variables, clearly state the objective function for the
+ problem. (This should be an equation.)
+
+iii. Based on your earlier mathematical definition of the decision variables, state each
+ constraint in both equation form. (Hint, you must enter and leave all connecting
+ cities, you only exit out of Birmingham, and only enter Virginia Beach.)
+
+iv. Based on your model, derive the model as an lp() and state the solution to this
+ problem, the total drive time, and the sum of the scenic scores of the solution.
+
+(b) Another one of your fellow travelers speaks up to say they really don’t like chit
+ chatting with an annoying uncle at the table and would like to have as many beautiful
+ pictures from the trip up to move conversations to more pleasant topics. They opt
+ for a trip that will provide the most scenic route.
+ 
+i. Based on your earlier mathematical definition of the decision variables, state the
+ objective function for the problem.
+
+ii. Based on your model, derive the model as an lp() and state the solution to this
+ problem, the total drive time, and the sum of the scenic scores of the solution.
+
+(c) You’re fed up with the differing opinions of your travelers, to split the difference,
+ you opt to pick a trip that will provide at least 20 scenic points while getting you to
+ Virginia Beach in the shortest amount of time.
+
+i. Based on your earlier mathematical definition of the decision variables, state the
+ objective function for the problem.
+
+ii. Based on your earlier mathematical definition of the decision variables, state each
+ of the constraints in both equation form and plain language.
+
+iii. Based on your model, derive the model as an lp() and state the solution to this
+ problem, the total drive time, and the sum of the scenic scores of the solution.
 
 ### Decision Variables
 1a. Let $X_{ij}$ be the decision variable representing the bushels of oranges transported from grove $i$ to plant $j$.
@@ -1320,4 +1516,5 @@ The following results were obtained from the LP model:
 - **Total Scenic Score**: The sum of scenic scores for the chosen routes is: 21
   
 This solution provides a balanced route from Birmingham to Virginia Beach, minimizing travel time while ensuring a scenic score of at least 20.
+
 
